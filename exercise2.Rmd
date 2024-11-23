@@ -1,0 +1,84 @@
+---
+title: "Exercise2"
+output: html_notebook
+---
+
+```{r}
+# Change this depending on your setup
+file_path <- "~/Downloads/ESS10_CHData.csv"
+
+ess_data <- read.csv(file_path)
+filtered_ess_data <- subset(ess_data, agea <= 100 & trstprt <= 10) # removing nonsense values
+```
+```{r}
+library(ggplot2)
+
+# Plot frequency distribution for `trstprt`
+ggplot(filtered_ess_data, aes(x = trstprt)) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Frequency Distribution of Trust in Parliament (trstprt)",
+       x = "Trust in Parliament (1-10)",
+       y = "Frequency") +
+  theme_minimal()
+
+# Plot frequency distribution for `agea`
+ggplot(filtered_ess_data, aes(x = agea)) +
+  geom_histogram(binwidth = 5, fill = "green", color = "black", alpha = 0.7) +
+  labs(title = "Frequency Distribution of Age (agea)",
+       x = "Age",
+       y = "Frequency") +
+  theme_minimal()
+```
+```{r}
+median_trstprt <- median(filtered_ess_data$trstprt, na.rm = TRUE)
+mean_trstprt <- mean(filtered_ess_data$trstprt, na.rm = TRUE)
+mean_age <- mean(filtered_ess_data$agea, na.rm = TRUE)
+median_agea <- median(filtered_ess_data$agea, na.rm = TRUE)
+
+# Print results
+cat("Trust, Mean / Median", mean_trstprt, " ", median_trstprt, "\n")
+cat("Age, Mean / Median", mean_age, " ", median_agea, "\n")
+# I think its okay to do either here since we removed outliers and bounded this (see data filtering step)
+```
+```{r}
+sd_trstprt_filtered <- sd(filtered_ess_data$trstprt, na.rm = TRUE)
+sd_agea_filtered <- sd(filtered_ess_data$agea, na.rm = TRUE)
+
+cat("Standard Deviation of Trust in Parliament (Filtered):", sd_trstprt_filtered, "\n")
+cat("Standard Deviation of Age (Filtered):", sd_agea_filtered, "\n")
+
+pearson_r_age_trust <- cor(filtered_ess_data$agea, filtered_ess_data$trstprt, use = "complete.obs", method = "pearson")
+pearson_r_age_trust
+```
+```{r}
+# Ensure the necessary libraries are loaded
+library(dplyr)
+
+# Filter to numeric columns
+numeric_columns <- sapply(filtered_ess_data, is.numeric)
+
+# Subset the data frame to only numeric columns
+numeric_data <- filtered_ess_data[, numeric_columns]
+
+# Compute Pearson's R for each column with `trstprt`
+correlations <- sapply(numeric_data, function(x) {
+  if (!all(is.na(x))) {  # Check if the column is not entirely NA
+    cor(x, filtered_ess_data$trstprt, use = "complete.obs", method = "pearson")
+  } else {
+    NA
+  }
+})
+
+# Convert the results to a data frame
+correlation_df <- data.frame(
+  Variable = names(correlations),
+  Pearson_R = correlations
+)
+
+# Sort the data frame by Pearson's R in descending order
+sorted_correlations <- correlation_df %>%
+  arrange(desc(Pearson_R))
+
+# Display the sorted correlations
+print(sorted_correlations)
+```
