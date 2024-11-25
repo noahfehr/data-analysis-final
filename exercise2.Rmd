@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 ```{r}
-# Change this depending on your setup
+# Change this depending on where the data is saved on your computer
 file_path <- "~/Downloads/ESS10_CHData.csv"
 
 ess_data <- read.csv(file_path)
@@ -15,7 +15,7 @@ library(ggplot2)
 
 # Plot frequency distribution for `trstprt`
 ggplot(filtered_ess_data, aes(x = trstprt)) +
-  geom_histogram(binwidth = 1, fill = "blue", color = "black", alpha = 0.7) +
+  geom_histogram(binwidth = 1, fill = "grey", color = "black", alpha = 0.7) +
   labs(title = "Frequency Distribution of Trust in Parliament (trstprt)",
        x = "Trust in Parliament (1-10)",
        y = "Frequency") +
@@ -23,7 +23,7 @@ ggplot(filtered_ess_data, aes(x = trstprt)) +
 
 # Plot frequency distribution for `agea`
 ggplot(filtered_ess_data, aes(x = agea)) +
-  geom_histogram(binwidth = 5, fill = "green", color = "black", alpha = 0.7) +
+  geom_histogram(binwidth = 5, fill = "grey", color = "black", alpha = 0.7) +
   labs(title = "Frequency Distribution of Age (agea)",
        x = "Age",
        y = "Frequency") +
@@ -48,16 +48,14 @@ cat("Standard Deviation of Trust in Parliament (Filtered):", sd_trstprt_filtered
 cat("Standard Deviation of Age (Filtered):", sd_agea_filtered, "\n")
 
 pearson_r_age_trust <- cor(filtered_ess_data$agea, filtered_ess_data$trstprt, use = "complete.obs", method = "pearson")
-pearson_r_age_trust
+cat("Pearson R for Age & Trust:", pearson_r_age_trust, "\n")
 ```
 ```{r}
+# This datablock was to explore which variables are associated with trust
 # Ensure the necessary libraries are loaded
 library(dplyr)
 
-# Filter to numeric columns
 numeric_columns <- sapply(filtered_ess_data, is.numeric)
-
-# Subset the data frame to only numeric columns
 numeric_data <- filtered_ess_data[, numeric_columns]
 
 # Compute Pearson's R for each column with `trstprt`
@@ -81,4 +79,11 @@ sorted_correlations <- correlation_df %>%
 
 # Display the sorted correlations
 print(sorted_correlations)
+```
+```{r}
+# Find the Pearson's R between control variables and age
+pearson_r_age_happiness <- cor(filtered_ess_data$agea, filtered_ess_data$happy, use = "complete.obs", method = "pearson")
+pearson_r_age_happiness
+pearson_r_age_covid <- cor(filtered_ess_data$agea, filtered_ess_data$gvhanc19, use = "complete.obs", method = "pearson")
+pearson_r_age_covid
 ```
