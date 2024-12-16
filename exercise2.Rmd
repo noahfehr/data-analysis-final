@@ -10,6 +10,7 @@ file_path <- "~/Downloads/ESS10_CHData.csv"
 ess_data <- read.csv(file_path)
 filtered_ess_data <- subset(ess_data, agea <= 100 & trstprt <= 10) # removing nonsense values
 ```
+
 ```{r}
 library(ggplot2)
 
@@ -29,6 +30,7 @@ ggplot(filtered_ess_data, aes(x = agea)) +
        y = "Frequency") +
   theme_minimal()
 ```
+
 ```{r}
 median_trstprt <- median(filtered_ess_data$trstprt, na.rm = TRUE)
 mean_trstprt <- mean(filtered_ess_data$trstprt, na.rm = TRUE)
@@ -40,6 +42,7 @@ cat("Trust, Mean / Median", mean_trstprt, " ", median_trstprt, "\n")
 cat("Age, Mean / Median", mean_age, " ", median_agea, "\n")
 # I think its okay to do either here since we removed outliers and bounded this (see data filtering step)
 ```
+
 ```{r}
 sd_trstprt_filtered <- sd(filtered_ess_data$trstprt, na.rm = TRUE)
 sd_agea_filtered <- sd(filtered_ess_data$agea, na.rm = TRUE)
@@ -50,6 +53,7 @@ cat("Standard Deviation of Age (Filtered):", sd_agea_filtered, "\n")
 pearson_r_age_trust <- cor(filtered_ess_data$agea, filtered_ess_data$trstprt, use = "complete.obs", method = "pearson")
 cat("Pearson R for Age & Trust:", pearson_r_age_trust, "\n")
 ```
+
 ```{r}
 # This datablock was to explore which variables are associated with trust
 # Ensure the necessary libraries are loaded
@@ -80,10 +84,35 @@ sorted_correlations <- correlation_df %>%
 # Display the sorted correlations
 print(sorted_correlations)
 ```
+
 ```{r}
 # Find the Pearson's R between control variables and age
 pearson_r_age_happiness <- cor(filtered_ess_data$agea, filtered_ess_data$happy, use = "complete.obs", method = "pearson")
 pearson_r_age_happiness
 pearson_r_age_covid <- cor(filtered_ess_data$agea, filtered_ess_data$gvhanc19, use = "complete.obs", method = "pearson")
 pearson_r_age_covid
+```
+
+```{r}
+bivariate_model <- lm(trstprt ~ agea, data = filtered_ess_data)
+summary(bivariate_model)
+
+filtered_ess_data$agea_squareroot <- sqrt(filtered_ess_data$agea)
+sqrt_model <- lm(trstprt ~ agea_squareroot, data = filtered_ess_data)
+summary(sqrt_model)
+```
+
+```{r}
+sqrt_model_multi <- lm(trstprt ~ agea_squareroot + happy + gvhanc19, data = filtered_ess_data)
+summary(sqrt_model_multi)
+```
+
+```{r}
+point_estimate <- data.frame(
+  agea_squared = c(sqrt(45), sqrt(22)),  
+  happy = c(7, 5),              
+  gvhanc19 = c(2, 4)            
+)
+predicted_values <- predict(quadratic_model_multi, newdata = point_estimate)
+predicted_values
 ```
