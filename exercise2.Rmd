@@ -103,7 +103,7 @@ summary(sqrt_model)
 ```
 
 ```{r}
-sqrt_model_multi <- lm(trstprt ~ agea_squareroot + happy + gvhanc19, data = filtered_ess_data)
+sqrt_model_multi <- lm(trstprt ~ agea_squareroot + happy + gvhanc19 + agea_squareroot * gvhanc19, data = filtered_ess_data)
 summary(sqrt_model_multi)
 ```
 
