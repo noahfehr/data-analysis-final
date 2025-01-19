@@ -1,5 +1,5 @@
 ---
-title: "Exercise2"
+title: "Data Analysis Final Project"
 output: html_notebook
 ---
 
@@ -8,7 +8,19 @@ output: html_notebook
 file_path <- "~/Downloads/ESS10_CHData.csv"
 
 ess_data <- read.csv(file_path)
+
 filtered_ess_data <- subset(ess_data, agea <= 100 & trstprt <= 10) # removing nonsense values
+
+
+filtered_ess_data$agea_binary <- cut(
+  filtered_ess_data$agea,
+  breaks = c(0, 35, Inf),  # Two bins: <= 35 and > 35 (followingwith the cutoffs outlined here: https://www.opensocietyfoundations.org/focus/open-society-barometer)
+  labels = c(1, 0),  # Labels for binary categories (true for young, false for old)
+  right = TRUE  # Include the upper bound in each interval
+)
+
+filtered_ess_data$agea_binary <- as.numeric(as.character(filtered_ess_data$agea_binary))
+table(filtered_ess_data$agea_binary) # check to see distribution of age once we force it to be binary
 ```
 
 ```{r}
@@ -25,7 +37,7 @@ ggplot(filtered_ess_data, aes(x = trstprt)) +
 # Plot frequency distribution for `agea`
 ggplot(filtered_ess_data, aes(x = agea)) +
   geom_histogram(binwidth = 5, fill = "grey", color = "black", alpha = 0.7) +
-  labs(title = "Frequency Distribution of Age (agea)",
+  labs(title = "Frequency Distribution of Age (agea_binned)",
        x = "Age",
        y = "Frequency") +
   theme_minimal()
@@ -52,8 +64,10 @@ cat("Standard Deviation of Age (Filtered):", sd_agea_filtered, "\n")
 
 pearson_r_age_trust <- cor(filtered_ess_data$agea, filtered_ess_data$trstprt, use = "complete.obs", method = "pearson")
 cat("Pearson R for Age & Trust:", pearson_r_age_trust, "\n")
-```
 
+pearson_r_age_binary_trust <- cor(filtered_ess_data$agea_binary, filtered_ess_data$trstprt, use = "complete.obs", method = "pearson")
+cat("Pearson R for Age (binary) & Trust:", pearson_r_age_binary_trust, "\n")
+```
 ```{r}
 # This datablock was to explore which variables are associated with trust
 # Ensure the necessary libraries are loaded
@@ -91,6 +105,11 @@ pearson_r_age_happiness <- cor(filtered_ess_data$agea, filtered_ess_data$happy, 
 pearson_r_age_happiness
 pearson_r_age_covid <- cor(filtered_ess_data$agea, filtered_ess_data$gvhanc19, use = "complete.obs", method = "pearson")
 pearson_r_age_covid
+
+pearson_r_age_binary_happiness <- cor(filtered_ess_data$agea_binary, filtered_ess_data$happy, use = "complete.obs", method = "pearson")
+pearson_r_age_binary_happiness
+pearson_r_age_binary_covid <- cor(filtered_ess_data$agea_binary, filtered_ess_data$gvhanc19, use = "complete.obs", method = "pearson")
+pearson_r_age_binary_covid
 ```
 
 ```{r}
@@ -100,19 +119,28 @@ summary(bivariate_model)
 filtered_ess_data$agea_squareroot <- sqrt(filtered_ess_data$agea)
 sqrt_model <- lm(trstprt ~ agea_squareroot, data = filtered_ess_data)
 summary(sqrt_model)
+
+bivariate_model_binary_age <- lm(trstprt ~ agea_binary, data = filtered_ess_data)
+summary(bivariate_model_binary_age)
+
 ```
 
 ```{r}
 sqrt_model_multi <- lm(trstprt ~ agea_squareroot + happy + gvhanc19 + agea_squareroot * gvhanc19, data = filtered_ess_data)
 summary(sqrt_model_multi)
+binary_model_multi <- lm(trstprt ~ agea_binary + happy + gvhanc19, data = filtered_ess_data)
+summary(binary_model_multi)
 ```
 
 ```{r}
 point_estimate <- data.frame(
-  agea_squared = c(sqrt(45), sqrt(22)),  
+  agea_squareroot = c(sqrt(45), sqrt(22)),
+  agea_binary = c(0, 1),
   happy = c(7, 5),              
   gvhanc19 = c(2, 4)            
 )
-predicted_values <- predict(quadratic_model_multi, newdata = point_estimate)
+predicted_values <- predict(sqrt_model_multi, newdata = point_estimate)
 predicted_values
+binary_predicted_values <- predict(binary_model_multi, newdata = point_estimate)
+binary_predicted_values
 ```
