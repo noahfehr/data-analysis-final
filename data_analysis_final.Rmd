@@ -3,9 +3,12 @@ title: "Data Analysis Final Project"
 output: html_notebook
 ---
 
+## Loading, Filtering, Inspecting the Data + Binary Classification of Age (young and not young)
+
 ```{r}
 # Change this depending on where the data is saved on your computer
-file_path <- "~/Downloads/ESS10_CHData.csv"
+#file_path <- "~/Downloads/ESS10_CHData.csv" # Noah
+file_path <- "C:/Users/phili/Downloads/ESS10_CH Data.csv" # Philipp
 
 ess_data <- read.csv(file_path)
 
@@ -14,7 +17,7 @@ filtered_ess_data <- subset(ess_data, agea <= 100 & trstprt <= 10) # removing no
 
 filtered_ess_data$agea_binary <- cut(
   filtered_ess_data$agea,
-  breaks = c(0, 35, Inf),  # Two bins: <= 35 and > 35 (followingwith the cutoffs outlined here: https://www.opensocietyfoundations.org/focus/open-society-barometer)
+  breaks = c(0, 35, Inf),  # Two bins: <= 35 and > 35 (following with the cutoffs outlined here: https://www.opensocietyfoundations.org/focus/open-society-barometer)
   labels = c(1, 0),  # Labels for binary categories (true for young, false for old)
   right = TRUE  # Include the upper bound in each interval
 )
@@ -22,6 +25,8 @@ filtered_ess_data$agea_binary <- cut(
 filtered_ess_data$agea_binary <- as.numeric(as.character(filtered_ess_data$agea_binary))
 table(filtered_ess_data$agea_binary) # check to see distribution of age once we force it to be binary
 ```
+
+## Descriptive Statistics - Plotting
 
 ```{r}
 library(ggplot2)
@@ -43,6 +48,8 @@ ggplot(filtered_ess_data, aes(x = agea)) +
   theme_minimal()
 ```
 
+## Descriptive Statistics - Central Values
+
 ```{r}
 median_trstprt <- median(filtered_ess_data$trstprt, na.rm = TRUE)
 mean_trstprt <- mean(filtered_ess_data$trstprt, na.rm = TRUE)
@@ -54,6 +61,8 @@ cat("Trust, Mean / Median", mean_trstprt, " ", median_trstprt, "\n")
 cat("Age, Mean / Median", mean_age, " ", median_agea, "\n")
 # I think its okay to do either here since we removed outliers and bounded this (see data filtering step)
 ```
+
+## Descriptive Statistics - SDs + Correlation for Trust and Age (main focal var)
 
 ```{r}
 sd_trstprt_filtered <- sd(filtered_ess_data$trstprt, na.rm = TRUE)
@@ -68,6 +77,9 @@ cat("Pearson R for Age & Trust:", pearson_r_age_trust, "\n")
 pearson_r_age_binary_trust <- cor(filtered_ess_data$agea_binary, filtered_ess_data$trstprt, use = "complete.obs", method = "pearson")
 cat("Pearson R for Age (binary) & Trust:", pearson_r_age_binary_trust, "\n")
 ```
+
+## Correlation over whole Dataset
+
 ```{r}
 # This datablock was to explore which variables are associated with trust
 # Ensure the necessary libraries are loaded
@@ -99,6 +111,8 @@ sorted_correlations <- correlation_df %>%
 print(sorted_correlations)
 ```
 
+## Relevant Correlations
+
 ```{r}
 # Find the Pearson's R between control variables and age
 pearson_r_age_happiness <- cor(filtered_ess_data$agea, filtered_ess_data$happy, use = "complete.obs", method = "pearson")
@@ -112,6 +126,32 @@ pearson_r_age_binary_covid <- cor(filtered_ess_data$agea_binary, filtered_ess_da
 pearson_r_age_binary_covid
 ```
 
+## Relevant Correlation Matrix and Heatmap Visualization
+
+```{r}
+# Visualize the relevant correlations in a correlation matrix (based on data preparation from above)
+library(ggcorrplot)
+
+vars_of_interest <- c("trstprt", "agea", "agea_binary", "happy", "gvhanc19")
+matrix_data <- numeric_data[, intersect(names(numeric_data), vars_of_interest)]
+colnames(matrix_data) <- c("Trust", "Happiness", "Age", "COVID_Response", "Age_Binary")
+
+cor_matrix <- cor(matrix_data, use = "complete.obs", method = "pearson")
+cor_matrix
+
+ggcorrplot(
+  cor_matrix, 
+  type = "lower",
+  lab = TRUE,
+  digits = 4,
+  hc.order = FALSE,
+  colors = c("blue", "white", "red"),
+  title = "Correlation Heatmap"
+)
+```
+
+## Bivariate Linear Models
+
 ```{r}
 bivariate_model <- lm(trstprt ~ agea, data = filtered_ess_data)
 summary(bivariate_model)
@@ -122,8 +162,9 @@ summary(sqrt_model)
 
 bivariate_model_binary_age <- lm(trstprt ~ agea_binary, data = filtered_ess_data)
 summary(bivariate_model_binary_age)
-
 ```
+
+## Multivariate Linear Models
 
 ```{r}
 sqrt_model_multi <- lm(trstprt ~ agea_squareroot + happy + gvhanc19 + agea_squareroot * gvhanc19, data = filtered_ess_data)
@@ -132,11 +173,13 @@ binary_model_multi <- lm(trstprt ~ agea_binary + happy + gvhanc19, data = filter
 summary(binary_model_multi)
 ```
 
+## Point Estimates
+
 ```{r}
 point_estimate <- data.frame(
   agea_squareroot = c(sqrt(45), sqrt(22)),
   agea_binary = c(0, 1),
-  happy = c(7, 5),              
+  happy = c(5, 7),              
   gvhanc19 = c(2, 4)            
 )
 predicted_values <- predict(sqrt_model_multi, newdata = point_estimate)
